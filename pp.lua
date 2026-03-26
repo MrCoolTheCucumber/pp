@@ -15,12 +15,17 @@ local eventToSetting = {
     CHAT_MSG_CHANNEL = "CHANNEL",
 }
 
+local inCombat = false
 local frame = CreateFrame("Frame")
 
 -- Register events
 for event, _ in pairs(eventToSetting) do
     frame:RegisterEvent(event)
 end
+
+-- Register combat state events
+frame:RegisterEvent("PLAYER_REGEN_DISABLED")  -- entering combat
+frame:RegisterEvent("PLAYER_REGEN_ENABLED")   -- leaving combat
 
 -- Register ADDON_LOADED to initialize our SavedVariables
 frame:RegisterEvent("ADDON_LOADED")
@@ -57,8 +62,22 @@ frame:SetScript("OnEvent", function(self, event, ...)
         return
     end
 
+    if event == "PLAYER_REGEN_DISABLED" then
+        inCombat = true
+        return
+    end
+    if event == "PLAYER_REGEN_ENABLED" then
+        inCombat = false
+        return
+    end
+
     -- Check if the master toggle is off
     if not PPSettings["MASTER"] then
+        return
+    end
+
+    -- Skip during combat to avoid tainted string errors
+    if inCombat then
         return
     end
 
